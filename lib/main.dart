@@ -1,4 +1,6 @@
+import 'package:audio_services/audio-services.dart';
 import 'package:audio_services/recorder-screen.dart';
+import 'package:audio_services/test-audio-service.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -14,6 +16,8 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: SimpleRecorder());
+        home:
+            // TestAudioService(),
+            SimpleRecorder());
   }
 }

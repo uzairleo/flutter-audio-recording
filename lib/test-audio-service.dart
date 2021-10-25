@@ -13,126 +13,27 @@ typedef _Fn = void Function();
 
 const theSource = AudioSource.microphone;
 
-class SimpleRecorder extends StatefulWidget {
+class TestAudioService extends StatefulWidget {
   @override
-  _SimpleRecorderState createState() => _SimpleRecorderState();
+  _TestAudioServiceState createState() => _TestAudioServiceState();
 }
 
-class _SimpleRecorderState extends State<SimpleRecorder> {
-  final audioService = AudioServices();
+class _TestAudioServiceState extends State<TestAudioService> {
+  AudioServices? audioService;
   @override
   void initState() {
+    audioService = AudioServices();
+    audioService!.init();
     super.initState();
   }
 
   @override
   void dispose() {
-    _mPlayer!.closeAudioSession();
-    _mPlayer = null;
-
-    _mRecorder!.closeAudioSession();
-    _mRecorder = null;
+    audioService!.dispose();
     super.dispose();
   }
 
-  Future<void> openTheRecorder() async {
-    if (!kIsWeb) {
-      var status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
-        throw RecordingPermissionException('Microphone permission not granted');
-      }
-    }
-
-    await _mRecorder!.openAudioSession();
-    if (!await _mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
-      var appDirectory = await getAppDirectory();
-      _codec = Codec.opusWebM;
-      _mPath = "$appDirectory/tau_file.webm";
-      print("AUDIO==> $_mPath");
-      if (!await _mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
-        _mRecorderIsInited = true;
-        return;
-      }
-    }
-    _mRecorderIsInited = true;
-  }
-
-  getAppDirectory() async {
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    String appDocPath = appDocDir.path;
-    //also update the _mpath
-    _mPath = "$appDocPath/testAudio.mp4";
-    print("Audio File path is ===>  $_mPath");
-    return appDocPath;
-  }
-  // ----------------------  Here is the code for recording and playback -------
-
-  void record() {
-    _mRecorder!
-        .startRecorder(
-      toFile: _mPath,
-      codec: _codec,
-      audioSource: theSource,
-    )
-        .then((value) {
-      setState(() {});
-    });
-  }
-
-  void stopRecorder() async {
-    await _mRecorder!.stopRecorder().then((value) {
-      setState(() {
-        //var url = value;
-        _mplaybackReady = true;
-      });
-    });
-  }
-
-  void play() async {
-    assert(_mPlayerIsInited &&
-        _mplaybackReady &&
-        _mRecorder!.isStopped &&
-        _mPlayer!.isStopped);
-    print("Audio FIle mp4 path is ======> $_mPath");
-    // File audioFile = File('$appDocPath/$_mPath');
-    _mPlayer!
-        .startPlayer(
-            fromURI: _mPath,
-            //codec: kIsWeb ? Codec.opusWebM : Codec.aacADTS,
-            whenFinished: () {
-              setState(() {});
-            })
-        .then((value) {
-      setState(() {});
-    });
-  }
-
-  void stopPlayer() {
-    _mPlayer!.stopPlayer().then((value) {
-      setState(() {});
-    });
-  }
-
 // ----------------------------- UI --------------------------------------------
-
-  _Fn? getRecorderFn() {
-    if (!_mRecorderIsInited || !_mPlayer!.isStopped) {
-      return null;
-    }
-    return _mRecorder!.isStopped ? record : stopRecorder;
-  }
-
-  _Fn? getPlaybackFn() {
-    if (!_mPlayerIsInited || !_mplaybackReady || !_mRecorder!.isStopped) {
-      return null;
-    }
-    return _mPlayer!.isStopped ? play : stopPlayer;
-    // if (_mPlayer!.isStopped) {
-    //   play();
-    // } else {
-    //   stopPlayer();
-    // }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,15 +56,16 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
             ),
             child: Row(children: [
               ElevatedButton(
-                onPressed: getRecorderFn(),
+                onPressed: audioService!.getRecorderFn(),
                 //color: Colors.white,
                 //disabledColor: Colors.grey,
-                child: Text(_mRecorder!.isRecording ? 'Stop' : 'Record'),
+                child: Text(
+                    audioService!.mRecorder!.isRecording ? 'Stop' : 'Record'),
               ),
               SizedBox(
                 width: 20,
               ),
-              Text(_mRecorder!.isRecording
+              Text(audioService!.mRecorder!.isRecording
                   ? 'Recording in progress'
                   : 'Recorder is stopped'),
             ]),
@@ -183,15 +85,15 @@ class _SimpleRecorderState extends State<SimpleRecorder> {
             ),
             child: Row(children: [
               ElevatedButton(
-                onPressed: getPlaybackFn(),
+                onPressed: audioService!.getPlaybackFn(),
                 //color: Colors.white,
                 //disabledColor: Colors.grey,
-                child: Text(_mPlayer!.isPlaying ? 'Stop' : 'Play'),
+                child: Text(audioService!.mPlayer!.isPlaying ? 'Stop' : 'Play'),
               ),
               SizedBox(
                 width: 20,
               ),
-              Text(_mPlayer!.isPlaying
+              Text(audioService!.mPlayer!.isPlaying
                   ? 'Playback in progress'
                   : 'Player is stopped'),
             ]),
