@@ -23,14 +23,14 @@ class AudioServices {
 //initializing all the instances of flutter_sound
   Codec _codec = Codec.aacMP4;
   String _mPath = 'leoTest.mp4';
-  FlutterSoundPlayer? _mPlayer = FlutterSoundPlayer();
-  FlutterSoundRecorder? _mRecorder = FlutterSoundRecorder();
+  FlutterSoundPlayer? mPlayer = FlutterSoundPlayer();
+  FlutterSoundRecorder? mRecorder = FlutterSoundRecorder();
   bool _mPlayerIsInited = false;
   bool _mRecorderIsInited = false;
   bool _mplaybackReady = false;
 
   init() {
-    _mPlayer!.openAudioSession().then((value) {
+    mPlayer!.openAudioSession().then((value) {
       _mPlayerIsInited = true;
     });
 
@@ -41,6 +41,18 @@ class AudioServices {
     getAppDirectory();
   }
 
+  _Fn? getPlaybackFn() {
+    if (!_mPlayerIsInited || !_mplaybackReady || !mRecorder!.isStopped) {
+      return null;
+    }
+    return mPlayer!.isStopped ? play : stopPlayer;
+    // if (_mPlayer!.isStopped) {
+    //   play();
+    // } else {
+    //   stopPlayer();
+    // }
+  }
+
   Future<void> openTheRecorder() async {
     if (!kIsWeb) {
       var status = await Permission.microphone.request();
@@ -49,13 +61,13 @@ class AudioServices {
       }
     }
 
-    await _mRecorder!.openAudioSession();
-    if (!await _mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
+    await mRecorder!.openAudioSession();
+    if (!await mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
       var appDirectory = await getAppDirectory();
       _codec = Codec.opusWebM;
       _mPath = "$appDirectory/tau_file.webm";
       print("AUDIO==> $_mPath");
-      if (!await _mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
+      if (!await mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
         _mRecorderIsInited = true;
         return;
       }
@@ -74,7 +86,7 @@ class AudioServices {
   // ----------------------  Here is the code for recording and playback -------
 
   void record() {
-    _mRecorder!
+    mRecorder!
         .startRecorder(
       toFile: _mPath,
       codec: _codec,
@@ -86,7 +98,7 @@ class AudioServices {
   }
 
   void stopRecorder() async {
-    await _mRecorder!.stopRecorder().then((value) {
+    await mRecorder!.stopRecorder().then((value) {
       // setState(() {
       //var url = value;
       _mplaybackReady = true;
@@ -97,11 +109,11 @@ class AudioServices {
   void play() async {
     assert(_mPlayerIsInited &&
         _mplaybackReady &&
-        _mRecorder!.isStopped &&
-        _mPlayer!.isStopped);
+        mRecorder!.isStopped &&
+        mPlayer!.isStopped);
     print("Audio FIle mp4 path is ======> $_mPath");
     // File audioFile = File('$appDocPath/$_mPath');
-    _mPlayer!
+    mPlayer!
         .startPlayer(
             fromURI: _mPath,
             //codec: kIsWeb ? Codec.opusWebM : Codec.aacADTS,
@@ -110,9 +122,23 @@ class AudioServices {
   }
 
   void stopPlayer() {
-    _mPlayer!.stopPlayer().then((value) {});
+    mPlayer!.stopPlayer().then((value) {});
   }
 
+  _Fn? getRecorderFn() {
+    if (!_mRecorderIsInited || !mPlayer!.isStopped) {
+      return null;
+    }
+    return mRecorder!.isStopped ? record : stopRecorder;
+  }
+
+  dispose() {
+    mPlayer!.closeAudioSession();
+    mPlayer = null;
+
+    mRecorder!.closeAudioSession();
+    mRecorder = null;
+  }
 //defining methods for performing some sound operations in generic way
 /**
  * record()
