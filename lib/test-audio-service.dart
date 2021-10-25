@@ -23,7 +23,6 @@ class _TestAudioServiceState extends State<TestAudioService> {
   @override
   void initState() {
     audioService = AudioServices();
-    audioService!.init();
     super.initState();
   }
 
