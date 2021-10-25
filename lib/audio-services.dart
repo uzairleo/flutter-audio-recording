@@ -16,9 +16,9 @@ typedef _Fn = void Function();
 const theSource = AudioSource.microphone;
 
 class AudioServices {
-  AudioServices() {
-    init();
-  }
+  // AudioServices() {
+  //   init();
+  // }
 
 //initializing all the instances of flutter_sound
   Codec _codec = Codec.aacMP4;
